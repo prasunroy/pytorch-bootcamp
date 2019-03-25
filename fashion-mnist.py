@@ -55,11 +55,11 @@ def imshow(image, fig_name=''):
     return
 
 images, labels = next(iter(train_loader))
-imshow(torchvision.utils.make_grid(images[0:5], nrow=5), 'Train samples')
+imshow(torchvision.utils.make_grid(images[0:5], nrow=5), 'Few train samples')
 print(', '.join([idx_to_class[label.item()] for label in labels[0:5]]))
 
 images, labels = next(iter(test_loader))
-imshow(torchvision.utils.make_grid(images[0:5], nrow=5), 'Test samples')
+imshow(torchvision.utils.make_grid(images[0:5], nrow=5), 'Few test samples')
 print(', '.join([idx_to_class[label.item()] for label in labels[0:5]]))
 
 
@@ -109,13 +109,15 @@ criterion = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(network.parameters(), lr=0.001, momentum=0.9)
 
 print('[INFO] Training started using device: {}'.format(device.type.upper()))
+print('[INFO] Training on {} samples'.format(len(train_set)))
+print('[INFO] Testing on {} samples'.format(len(test_set)))
 
 time.sleep(0.5)
 
 for epoch in range(10):
     running_loss = 0.
     train_loader_tqdm = tqdm.tqdm(train_loader, desc='[INFO] Epoch {:2d}'\
-                                  .format(epoch + 1))
+                                  .format(epoch + 1), unit=' batch')
     
     for index, batch in enumerate(train_loader_tqdm):
         x, y = batch
