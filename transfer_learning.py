@@ -14,7 +14,7 @@ References:
 # imports
 import copy
 import math
-import matplotlib
+import matplotlib.pyplot
 import numpy
 import os
 import requests
@@ -74,10 +74,9 @@ def imshow(image_tensor, fig_name=''):
     image_np = image_tensor.numpy().transpose((1, 2, 0))
     image_np = image_np * std + mean
     image_np = numpy.clip(image_np, 0, 1)
-    matplotlib.pyplot.figure()
     matplotlib.pyplot.title(fig_name)
     matplotlib.pyplot.imshow(image_np)
-    matplotlib.pyplot.show(block=False)
+    matplotlib.pyplot.pause(0.001)
     return
 
 # -----------------------------------------------------------------------------
@@ -218,6 +217,41 @@ def train(model, criterion, optimizer, scheduler, epochs=10, device=None):
     model.load_state_dict(best_wts)
     return model
 
+
+# -----------------------------------------------------------------------------
+# test model
+# -----------------------------------------------------------------------------
+
+def test(model, num_images=8, device=None):
+    # set device
+    if not device is None:
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    else:
+        device = torch.device(device)
+    training_state = model.training
+    model.eval()
+    num_prediction = 0
+    matplotlib.pyplot.figure()
+    with torch.no_grad():
+        for images, labels in dataloaders['val']:
+            images = images.to(device)
+            labels = labels.to(device)
+            preds = model(images)
+            preds = torch.max(preds, dim=1)[1]
+            for index, image_tensor in enumerate(images):
+                num_prediction += 1
+                ax = matplotlib.pyplot.subplot(num_images // 2, 2,
+                                               num_prediction)
+                ax.axis('off')
+                matplotlib.pyplot.tight_layout()
+                imshow(image_tensor.cpu(),
+                       f'Predicted: {class_names[labels[index]]}')
+                if num_prediction >= num_images:
+                    model.train(mode=training_state)
+                    return
+    model.train(mode=training_state)
+    return
+
 # -----------------------------------------------------------------------------
 
 # set device
@@ -237,3 +271,9 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
 # finetune model
 train(model_ckpt, criterion, optimizer, scheduler, epochs=10, device=device)
+
+# test model
+test(model_ckpt, device=device)
+
+# show predictions
+matplotlib.pyplot.show()
